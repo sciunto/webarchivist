@@ -7,6 +7,7 @@ import archive
 import uuid
 
 import argparse
+import os
 
 if __name__ == '__main__':
 
@@ -20,6 +21,10 @@ if __name__ == '__main__':
     #parser.add_argument('--notimecheck', help='No timecheck', action='store_false')
 
     args = parser.parse_args()
+
+    if args.d is None:
+        args.d = os.path.expanduser('~/wiki/archive')
+        args.d = '/tmp'
 
     name = uuid.uuid4()
     archive.archive_to_markdown(args.d, name, args.url)
