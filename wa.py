@@ -7,7 +7,8 @@ from libwa import archive
 import uuid
 
 import argparse
-import os
+import os, sys
+from subprocess import call
 
 
 import logging
@@ -19,6 +20,39 @@ logger.setLevel(logging.DEBUG)
 steam_handler = logging.StreamHandler()
 steam_handler.setLevel(logging.DEBUG)
 logger.addHandler(steam_handler)
+
+
+def query_yes_no(question, default="yes"):
+    """Ask a yes/no question via raw_input() and return their answer.
+
+    "question" is a string that is presented to the user.
+    "default" is the presumed answer if the user just hits <Enter>.
+        It must be "yes" (the default), "no" or None (meaning
+        an answer is required of the user).
+
+    The "answer" return value is one of "yes" or "no".
+    """
+    valid = {"yes":"yes",   "y":"yes",  "ye":"yes",
+             "no":"no",     "n":"no"}
+    if default == None:
+        prompt = " [y/n] "
+    elif default == "yes":
+        prompt = " [Y/n] "
+    elif default == "no":
+        prompt = " [y/N] "
+    else:
+        raise ValueError("invalid default answer: '%s'" % default)
+
+    while True:
+        sys.stdout.write(question + prompt)
+        choice = input().lower()
+        if default is not None and choice == '':
+            return default
+        elif choice in valid.keys():
+            return valid[choice]
+        else:
+            sys.stdout.write("Please respond with 'yes' or 'no' "\
+                             "(or 'y' or 'n').\n")
 
 
 if __name__ == '__main__':
@@ -42,6 +76,10 @@ if __name__ == '__main__':
     name = uuid.uuid4()
     (title, filepath) = archive.archive_to_markdown(args.d, name, args.url)
 
-    filepath = os.path.relpath(filepath, archive_root)
+    filepath_short = os.path.relpath(filepath, archive_root)
 
-    print('[[' + title + '|' + filepath + ']]')
+    if query_yes_no('Edit the mdwn file?') == 'yes':
+        EDITOR = os.environ.get('EDITOR', 'nano')
+        call([EDITOR, filepath])
+
+    print('[[' + title + '|' + filepath_short + ']]')
