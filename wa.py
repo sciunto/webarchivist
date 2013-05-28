@@ -3,11 +3,23 @@
 # Author: Francois Boulogne
 # License:
 
-import archive
+from libwa import archive
 import uuid
 
 import argparse
 import os
+
+
+import logging
+
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+
+
+steam_handler = logging.StreamHandler()
+steam_handler.setLevel(logging.DEBUG)
+logger.addHandler(steam_handler)
+
 
 if __name__ == '__main__':
 
@@ -27,8 +39,6 @@ if __name__ == '__main__':
         args.d = '/tmp'
 
     name = uuid.uuid4()
-    title = archive.archive_to_markdown(args.d, name, args.url)
+    (title, filepath) = archive.archive_to_markdown(args.d, name, args.url)
 
-    # Print link
-    print('[[' + title + '|path/truc]]')
-
+    print('[[' + title + '|' + filepath + ']]')  #FIXME : filepath : base

@@ -73,11 +73,11 @@ class ThreadImg(threading.Thread):
             try:
                 original_filename = img["src"].split("/")[-1].split('?')[0]
             except KeyError:
-                print('KeyError img["src"]. Ignoring...')
+                logger.debug('KeyError img["src"]. Ignoring...')
                 continue
             new_filename = str(number) + str(os.path.splitext(original_filename)[1])
 
-            print('thread: ' + '--> ' + original_filename + '--' + str(number))
+            logger.debug('thread: ' + original_filename + ' --> ' + new_filename)
             #Directory for pictures
             pic_dir = os.path.join(self.htmlpath, str(self.uuid))
             self.lock.acquire()
@@ -101,14 +101,15 @@ class ThreadImg(threading.Thread):
             except ValueError as e:
                 #Normally OK, but...
                 #Some links can raise ValueError
-                print('ValueError Fetchlink ' + str(e))
+                logger.error('ValueError Fetchlink ' + str(e))
             except IOError as e:
-                print('IOError Fetchlink ' + str(e))
-                #print(current_parsed)
+                logger.error('IOError Fetchlink ' + str(e))
+
             #img["src"] = os.path.relpath(outpath, self.htmlpath) # rel path
-            #img["src"] = os.path.relpath(new_filename, self.htmlpath) # rel path
+            # Ikiwiki needs only the filename.
+            # tree: foo/bar.png, foo.mdwn -> link to bar.png, not foo/bar.png
             img["src"] = new_filename
-            #end...
+
             self.queue.task_done()
 
 
@@ -139,15 +140,15 @@ def make_archive_thread(file_dir, uuid, url):
         try:
             fp = urlopen(url, timeout=timeout)
         except urllib.error.HTTPError:
-            print('could not open ' + str(url))
+            logger.error('could not open ' + str(url))
             # raise an error to do not add internal link in zim notes
             raise URLError
         except urllib.error.URLError:
-            print('could not open ' + str(url))
+            logger.error('could not open ' + str(url))
             # raise an error to do not add internal link in zim notes
             raise URLError
         except socket.timeout:
-            print('Time Out')
+            logger.error('Time Out')
             raise URLError
 
         a = fp.info()
@@ -161,15 +162,15 @@ def make_archive_thread(file_dir, uuid, url):
         try:
             soup = bs(urlopen(url, timeout=timeout))
         except urllib.error.HTTPError:
-            print('could not open ' + str(url))
+            logger.error('could not open ' + str(url))
             # raise an error to do not add internal link in zim notes
             raise URLError
         except urllib.error.URLError:
-            print('could not open ' + str(url))
+            logger.error('could not open ' + str(url))
             # raise an error to do not add internal link in zim notes
             raise URLError
         except socket.timeout:
-            print('Time Out')
+            logger.error('Time Out')
             raise URLError
         #Parsed url
         parsed = list(urlparse.urlparse(url))
@@ -189,9 +190,9 @@ def make_archive_thread(file_dir, uuid, url):
             img_queue.put(img)
 
         #wait all the threads...
-        print('waiting')
+        logger.debug('start threads')
         img_queue.join()
-        print('done')
+        logger.debug('threads done!')
         html_file = os.path.join(file_dir, str(uuid) + file_extension)
         with open(html_file, 'w') as htmlfile:
             htmlfile.write(soup.prettify())
@@ -205,9 +206,9 @@ def make_archive_thread(file_dir, uuid, url):
         except ValueError as e:
             #Normally OK, but...
             #Some links can raise ValueError
-            print('ValueError Fetchlink ' + str(e))
+            logger.error('ValueError Fetchlink ' + str(e))
         except:
-            print('Exception ')
+            logger.error('Unable to download the page')
         file_title = '' # TODO
     return (file_extension, file_title)
 
@@ -229,13 +230,20 @@ def archive_to_markdown(dest_dir, name, url):
 
     raise URLError if url is invalid or not accessible
     """
+    logger.debug('archive_to_markdown')
     (extension, title) = make_archive_thread(dest_dir, name, url)
 
     if extension == '.html':
+        logger.debug('It is html, call pandoc')
         htmlfile = os.path.join(dest_dir, str(name) + extension)
         command = ['pandoc', '-f', 'html', '-t', 'markdown', htmlfile]
         process = subprocess.Popen(command, bufsize=4096, stdout=subprocess.PIPE)
         stdout, stderr = process.communicate()
+        if stderr is not None:
+            logger.error('Pandoc stderr:')
+            logger.error(stderr.decode('utf-8'))
+            logger.error('Pandoc stderr end.')
+
         markdown_file = os.path.join(dest_dir, str(name) + '.mdwn')
         with open(markdown_file, 'w') as out:
             date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -248,11 +256,13 @@ def archive_to_markdown(dest_dir, name, url):
             out.write('---------------------------------------\n\n')
             # Write data
             out.write(stdout.decode('utf-8'))
-
+            filepath = markdown_file
     else:
-        print('not html')
+        logger.debug('It is NOT html')
+        filepath = os.path.join(dest_dir, str(name) + extension)
+        title = 'FIXME' # FIXME
 
-    return title
+    return (title, filepath)
 
 if __name__ == '__main__':
     pass
