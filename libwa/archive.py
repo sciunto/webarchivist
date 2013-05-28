@@ -260,7 +260,8 @@ def archive_to_markdown(dest_dir, name, url):
     else:
         logger.debug('It is NOT html')
         filepath = os.path.join(dest_dir, str(name) + extension)
-        title = 'FIXME' # FIXME
+        parsed = urlparse.urlparse(url)
+        title = os.path.basename(parsed.path)
 
     return (title, filepath)
 
