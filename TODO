@@ -1,4 +1,5 @@
 * recode relative URI to abs : view-source:http://www.mageialinux-online.org/wiki/quelle-configuration-materielle-pour-mageia
+http://stackoverflow.com/questions/9718541/reconstructing-absolute-urls-from-relative-urls-on-a-page
 * add header/footer with original url
 * print a URL code for ikiwiki
 * config file for auto dest ?

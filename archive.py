@@ -238,8 +238,11 @@ def archive_to_markdown(dest_dir, name, url):
         stdout, stderr = process.communicate()
         markdown_file = os.path.join(dest_dir, str(name) + '.mdwn')
         with open(markdown_file, 'w') as out:
-            # Write header
             date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # Write metadata
+            out.write('[[! title="' + title + '"]]\n')
+            out.write('[[! date="' + date + '"]]\n\n')
+            # Write header
             out.write('* Source: <' + url + '>\n')
             out.write('* Date: ' + date + '\n')
             out.write('---------------------------------------\n\n')
