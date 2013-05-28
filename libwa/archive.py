@@ -15,7 +15,7 @@
 
 """ Functions dealing with the archive"""
 
-import os
+import os, sys
 import datetime
 import logging
 logger = logging.getLogger('zimarchivist.archive')
@@ -207,8 +207,10 @@ def make_archive_thread(file_dir, uuid, url):
             #Normally OK, but...
             #Some links can raise ValueError
             logger.error('ValueError Fetchlink ' + str(e))
+            sys.exit(0)
         except:
             logger.error('Unable to download the page')
+            sys.exit(0)
         file_title = '' # TODO
     return (file_extension, file_title)
 
