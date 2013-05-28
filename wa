@@ -41,7 +41,6 @@ if __name__ == '__main__':
 
     if args.o is None:
         args.o = os.path.expanduser('~/wiki/archive')
-        args.o = '/tmp/dir'
     archive_root =  os.path.split(args.o)[0]
 
     name = uuid.uuid4()
