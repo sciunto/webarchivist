@@ -27,6 +27,8 @@ if __name__ == '__main__':
         args.d = '/tmp'
 
     name = uuid.uuid4()
-    archive.archive_to_markdown(args.d, name, args.url)
+    title = archive.archive_to_markdown(args.d, name, args.url)
 
+    # Print link
+    print('[[' + title + '|path/truc]]')
 

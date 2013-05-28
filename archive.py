@@ -16,10 +16,7 @@
 """ Functions dealing with the archive"""
 
 import os
-import sys
-import glob
-import re
-import shutil
+import datetime
 import logging
 logger = logging.getLogger('zimarchivist.archive')
 
@@ -28,7 +25,7 @@ logger = logging.getLogger('zimarchivist.archive')
 import urllib.parse as urlparse
 from urllib.request import urlopen, urlretrieve
 import urllib.error
-import socket #for exceptions
+import socket # for exceptions
 import http.client
 import mimetypes
 from bs4 import BeautifulSoup as bs
@@ -137,7 +134,7 @@ def make_archive_thread(file_dir, uuid, url):
 
     timeout = 15
 
-    if mimetype == None:
+    if mimetype is None:
         #Try to guess with urrllib if mimetype failed
         try:
             fp = urlopen(url, timeout=timeout)
@@ -157,8 +154,7 @@ def make_archive_thread(file_dir, uuid, url):
         mimetype = a.get_content_type()
         logger.debug('mimetype guess with urllib: ' + str(mimetype) )
 
-
-    if mimetype == 'text/html' or mimetype == None:
+    if mimetype == 'text/html' or mimetype is None:
         logger.debug('Download as text/html')
         file_extension = '.html'
         #Open the url
@@ -199,6 +195,7 @@ def make_archive_thread(file_dir, uuid, url):
         html_file = os.path.join(file_dir, str(uuid) + file_extension)
         with open(html_file, 'w') as htmlfile:
             htmlfile.write(soup.prettify())
+        file_title = soup.title.string
     else:
         logger.debug('Download as a bin file')
         file_extension  = mimetypes.guess_extension(mimetype)
@@ -211,15 +208,15 @@ def make_archive_thread(file_dir, uuid, url):
             print('ValueError Fetchlink ' + str(e))
         except:
             print('Exception ')
-    return file_extension
-
+        file_title = '' # TODO
+    return (file_extension, file_title)
 
 
 def archive_to_markdown(dest_dir, name, url):
     """
     Download the url in dest_dir
     and everything is tagged with name.
-    If url is text/html, 
+    If url is text/html,
      * pictures are saved in a subdir
      * html is converted to mdwn
     Otherwise, the bin file is saved.
@@ -228,9 +225,11 @@ def archive_to_markdown(dest_dir, name, url):
     name : Archive ID
     url : URL to archive
 
+    return : title
+
     raise URLError if url is invalid or not accessible
     """
-    extension = make_archive_thread(dest_dir, name, url)
+    (extension, title) = make_archive_thread(dest_dir, name, url)
 
     if extension == '.html':
         htmlfile = os.path.join(dest_dir, str(name) + extension)
@@ -239,11 +238,18 @@ def archive_to_markdown(dest_dir, name, url):
         stdout, stderr = process.communicate()
         markdown_file = os.path.join(dest_dir, str(name) + '.mdwn')
         with open(markdown_file, 'w') as out:
+            # Write header
+            date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            out.write('* Source: <' + url + '>\n')
+            out.write('* Date: ' + date + '\n')
+            out.write('---------------------------------------\n\n')
+            # Write data
             out.write(stdout.decode('utf-8'))
 
     else:
         print('not html')
 
+    return title
 
 if __name__ == '__main__':
     pass
