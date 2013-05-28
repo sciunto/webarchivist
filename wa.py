@@ -36,9 +36,12 @@ if __name__ == '__main__':
 
     if args.d is None:
         args.d = os.path.expanduser('~/wiki/archive')
-        args.d = '/tmp'
+        args.d = '/tmp/dir'
+    archive_root =  os.path.split(args.d)[0]
 
     name = uuid.uuid4()
     (title, filepath) = archive.archive_to_markdown(args.d, name, args.url)
 
-    print('[[' + title + '|' + filepath + ']]')  #FIXME : filepath : base
+    filepath = os.path.relpath(filepath, archive_root)
+
+    print('[[' + title + '|' + filepath + ']]')
